@@ -25,6 +25,7 @@ abstract final class AppTheme {
       error: AppColors.red,
     ),
     fontFamily: 'Segoe UI',
+    fontFamilyFallback: const ['Tahoma', 'Arial'],
     textTheme: const TextTheme(
       bodyMedium: TextStyle(color: AppColors.text, fontSize: 13),
       bodySmall: TextStyle(color: AppColors.muted, fontSize: 11),

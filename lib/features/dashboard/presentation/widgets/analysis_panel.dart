@@ -1,220 +1,249 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../data/mock_market_data.dart';
+import '../../domain/analysis_models.dart';
+import '../../domain/price_action_models.dart';
 import 'dashboard_card.dart';
 
 class AnalysisPanel extends StatelessWidget {
-  const AnalysisPanel({super.key});
+  const AnalysisPanel({
+    required this.analysis,
+    required this.timeframeTrends,
+    required this.indicators,
+    required this.marketAnalysis,
+    super.key,
+  });
+
+  final TrendAnalysis? analysis;
+  final Map<String, TrendAnalysis> timeframeTrends;
+  final IndicatorSnapshot? indicators;
+  final PriceActionSmcSnapshot marketAnalysis;
 
   @override
   Widget build(BuildContext context) {
+    final trend = analysis ?? const TrendAnalysis.unknown();
+    final color = _directionColor(trend.direction);
     return DashboardCard(
       padding: const EdgeInsets.all(11),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.auto_awesome, color: AppColors.purple, size: 19),
-                SizedBox(width: 7),
+                const Icon(Icons.trending_up, color: AppColors.cyan, size: 19),
+                const SizedBox(width: 7),
                 Text(
-                  'AI Signal / تحلیل نهایی',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                  context.l10n.text('trendAnalysis'),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
                 ),
-                Spacer(),
-                DemoBadge(),
               ],
             ),
             const SizedBox(height: 12),
+            Container(
+              height: 58,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: .15),
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(color: color.withValues(alpha: .7)),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: .12),
+                    blurRadius: 14,
+                  ),
+                ],
+              ),
+              child: Text(
+                _directionLabel(context, trend.direction),
+                style: TextStyle(
+                  color: color,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            const SizedBox(height: 9),
             Row(
               children: [
                 Expanded(
-                  child: Container(
-                    height: 58,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF00A65A), Color(0xFF00E58B)],
-                      ),
-                      borderRadius: BorderRadius.circular(9),
-                      border: Border.all(color: const Color(0xFF4BFFB1)),
-                      boxShadow: const [
-                        BoxShadow(color: Color(0x3300E58B), blurRadius: 14),
-                      ],
-                    ),
-                    child: const Text(
-                      'BUY',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
+                  child: _QuickStat(
+                    label: context.l10n.text('trendStrength'),
+                    value: _strengthLabel(context, trend.strength),
+                    color: color,
                   ),
                 ),
-                const SizedBox(width: 9),
-                Container(
-                  height: 58,
-                  width: 100,
-                  padding: const EdgeInsets.all(7),
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.circular(9),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'امتیاز تحلیل',
-                        style: TextStyle(color: AppColors.green, fontSize: 9),
-                      ),
-                      Text(
-                        '82 / 100',
-                        style: TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 9),
-            const Row(
-              children: [
-                Expanded(
-                  child: _QuickStat(label: 'تایم پیشنهادی', value: 'M15'),
-                ),
-                SizedBox(width: 6),
+                const SizedBox(width: 6),
                 Expanded(
                   child: _QuickStat(
-                    label: 'قدرت صعودی',
-                    value: 'متوسط',
-                    color: AppColors.cyan,
-                  ),
-                ),
-                SizedBox(width: 6),
-                Expanded(
-                  child: _QuickStat(
-                    label: 'وضعیت فعلی',
-                    value: 'PRZ',
+                    label: 'ADX 14',
+                    value: _value(indicators?.latestAdx),
                     color: AppColors.amber,
                   ),
                 ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _QuickStat(
+                    label: 'ATR 14',
+                    value: _value(indicators?.latestAtr),
+                    color: AppColors.cyan,
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 9),
-            ...MockMarketData.levels.map(
-              (level) => Container(
-                margin: const EdgeInsets.only(bottom: 5),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.background.withValues(alpha: .7),
-                  borderRadius: BorderRadius.circular(7),
-                  border: Border.all(color: AppColors.border),
-                ),
+            const SizedBox(height: 10),
+            Text(
+              context.l10n.text('analysisReasons'),
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 6),
+            ...trend.reasons.map(
+              (reason) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
                 child: Row(
                   children: [
-                    Text(
-                      level.label,
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 10,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      level.value,
-                      style: TextStyle(
-                        color: toneColor(level.tone),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
+                    Icon(Icons.circle, color: color, size: 6),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        _localizedReason(context, reason),
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 11,
+                          height: 1.4,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 2),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(7),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: const Row(
-                children: [
-                  Text(
-                    'Risk / Reward',
-                    style: TextStyle(color: AppColors.muted, fontSize: 11),
-                  ),
-                  Spacer(),
-                  Text(
-                    '1 : 2.5',
-                    style: TextStyle(
-                      color: AppColors.green,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              '💡 تحلیل هوشمند مصنوعی (DEMO)',
-              textDirection: TextDirection.rtl,
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'الگوی Bullish Gartley در محدوده PRZ شناسایی شده است. تثبیت قیمت بالای ۴٬۱۱۲ می‌تواند احتمال حرکت صعودی تا اهداف مشخص‌شده را افزایش دهد. این داده صرفاً نمایشی است.',
-              textDirection: TextDirection.rtl,
-              textAlign: TextAlign.justify,
-              style: TextStyle(
-                color: AppColors.muted,
-                height: 1.65,
-                fontSize: 11,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'وضعیت تایم‌فریم‌ها',
-              style: TextStyle(fontWeight: FontWeight.w800),
+            const SizedBox(height: 8),
+            Text(
+              context.l10n.text('currentIndicators'),
+              style: const TextStyle(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 7),
-            const Wrap(
+            _IndicatorValue('EMA 20', indicators?.latestEma20, AppColors.cyan),
+            _IndicatorValue('EMA 50', indicators?.latestEma50, AppColors.amber),
+            _IndicatorValue('EMA 200', indicators?.latestEma200, AppColors.red),
+            _IndicatorValue('RSI 14', indicators?.latestRsi, AppColors.purple),
+            _IndicatorValue('MACD', indicators?.latestMacd, AppColors.cyan),
+            _IndicatorValue(
+              'Avg Volume 20',
+              indicators?.latestAverageVolume,
+              AppColors.green,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              context.l10n.text('timeframeStatus'),
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 7),
+            Wrap(
               spacing: 6,
               runSpacing: 6,
-              children: [
-                _TimeframeSignal('M1', 'WAIT', AppColors.amber),
-                _TimeframeSignal('M5', 'BUY', AppColors.green),
-                _TimeframeSignal('M15', 'BUY', AppColors.green),
-                _TimeframeSignal('M30', 'BUY', AppColors.green),
-                _TimeframeSignal('H1', 'SELL', AppColors.red),
-                _TimeframeSignal('H4', 'SELL', AppColors.red),
-                _TimeframeSignal('D1', 'SELL', AppColors.red),
-              ],
+              children: MockMarketData.timeframes.map((timeframe) {
+                final value =
+                    timeframeTrends[timeframe] ?? const TrendAnalysis.unknown();
+                return _TimeframeTrend(timeframe, value.direction);
+              }).toList(),
             ),
+            const SizedBox(height: 12),
+            Text(
+              context.l10n.text('phaseSixSummary'),
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 7),
+            _PhaseSixSummary(analysis: marketAnalysis),
           ],
         ),
       ),
     );
   }
+
+  static String _value(double? value) => value?.toStringAsFixed(2) ?? '—';
+}
+
+class _PhaseSixSummary extends StatelessWidget {
+  const _PhaseSixSummary({required this.analysis});
+  final PriceActionSmcSnapshot analysis;
+
+  @override
+  Widget build(BuildContext context) {
+    if (analysis.isEmpty) {
+      return Text(
+        context.l10n.text('noDetections'),
+        style: const TextStyle(color: AppColors.muted, fontSize: 10),
+      );
+    }
+    final latestBreak = analysis.structureBreaks.lastOrNull;
+    final latestPattern = analysis.priceActionPatterns.lastOrNull;
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        if (latestBreak != null)
+          _SummaryChip(
+            label: latestBreak.type == StructureBreakType.changeOfCharacter
+                ? 'CHoCH'
+                : 'BOS',
+            color: latestBreak.direction == MarketDirection.bullish
+                ? AppColors.green
+                : AppColors.red,
+          ),
+        _SummaryChip(
+          label:
+              '${context.l10n.text('orderBlock')}: ${analysis.orderBlocks.length}',
+          color: AppColors.purple,
+        ),
+        _SummaryChip(
+          label:
+              '${context.l10n.text('fairValueGap')}: ${analysis.fairValueGaps.length}',
+          color: AppColors.cyan,
+        ),
+        if (latestPattern != null)
+          _SummaryChip(
+            label: context.l10n.text('priceAction'),
+            color: latestPattern.direction == MarketDirection.bearish
+                ? AppColors.red
+                : AppColors.green,
+          ),
+      ],
+    );
+  }
+}
+
+class _SummaryChip extends StatelessWidget {
+  const _SummaryChip({required this.label, required this.color});
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: .1),
+      borderRadius: BorderRadius.circular(6),
+      border: Border.all(color: color.withValues(alpha: .45)),
+    ),
+    child: Text(
+      label,
+      style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w700),
+    ),
+  );
 }
 
 class _QuickStat extends StatelessWidget {
   const _QuickStat({
     required this.label,
     required this.value,
-    this.color = AppColors.text,
+    required this.color,
   });
   final String label;
   final String value;
@@ -248,16 +277,16 @@ class _QuickStat extends StatelessWidget {
   );
 }
 
-class _TimeframeSignal extends StatelessWidget {
-  const _TimeframeSignal(this.timeframe, this.signal, this.color);
-  final String timeframe;
-  final String signal;
+class _IndicatorValue extends StatelessWidget {
+  const _IndicatorValue(this.label, this.value, this.color);
+  final String label;
+  final double? value;
   final Color color;
 
   @override
   Widget build(BuildContext context) => Container(
-    width: 91,
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+    margin: const EdgeInsets.only(bottom: 5),
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
     decoration: BoxDecoration(
       color: AppColors.background,
       borderRadius: BorderRadius.circular(6),
@@ -265,20 +294,89 @@ class _TimeframeSignal extends StatelessWidget {
     ),
     child: Row(
       children: [
-        Text(
-          timeframe,
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 10),
-        ),
+        Icon(Icons.circle, color: color, size: 7),
+        const SizedBox(width: 7),
+        Text(label, style: const TextStyle(fontSize: 10)),
         const Spacer(),
         Text(
-          signal,
+          value?.toStringAsFixed(3) ?? '—',
           style: TextStyle(
             color: color,
-            fontWeight: FontWeight.w800,
-            fontSize: 9,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ],
     ),
   );
+}
+
+class _TimeframeTrend extends StatelessWidget {
+  const _TimeframeTrend(this.timeframe, this.direction);
+  final String timeframe;
+  final TrendDirection direction;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _directionColor(direction);
+    return Container(
+      width: 92,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: .5)),
+      ),
+      child: Row(
+        children: [
+          Text(
+            timeframe,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 10),
+          ),
+          const Spacer(),
+          Text(
+            _directionLabel(context, direction),
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w800,
+              fontSize: 8,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+Color _directionColor(TrendDirection direction) => switch (direction) {
+  TrendDirection.bullish => AppColors.green,
+  TrendDirection.bearish => AppColors.red,
+  TrendDirection.sideways => AppColors.amber,
+  TrendDirection.unknown => AppColors.muted,
+};
+
+String _directionLabel(BuildContext context, TrendDirection direction) =>
+    context.l10n.text(switch (direction) {
+      TrendDirection.bullish => 'bullish',
+      TrendDirection.bearish => 'bearish',
+      TrendDirection.sideways => 'sideways',
+      TrendDirection.unknown => 'unknown',
+    });
+
+String _strengthLabel(BuildContext context, TrendStrength strength) =>
+    context.l10n.text(switch (strength) {
+      TrendStrength.weak => 'weak',
+      TrendStrength.moderate => 'moderate',
+      TrendStrength.strong => 'strong',
+      TrendStrength.unknown => 'unknown',
+    });
+
+String _localizedReason(BuildContext context, String reason) {
+  if (context.l10n.isPersian) return reason;
+  if (reason.contains('EMA')) return 'EMA alignment confirms the trend';
+  if (reason.contains('ADX')) {
+    final value = RegExp(r'\d+(?:\.\d+)?').firstMatch(reason)?.group(0);
+    return value == null ? 'ADX confirms trend strength' : 'ADX is $value';
+  }
+  return 'Price structure confirms the detected direction';
 }

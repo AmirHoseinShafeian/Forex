@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/localization/app_localizations.dart';
 
 class DashboardCard extends StatelessWidget {
   const DashboardCard({
@@ -53,9 +54,9 @@ class DemoBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(5),
         border: Border.all(color: AppColors.amber.withValues(alpha: .55)),
       ),
-      child: const Text(
-        'DEMO DATA',
-        style: TextStyle(
+      child: Text(
+        context.l10n.text('demoData'),
+        style: const TextStyle(
           color: AppColors.amber,
           fontSize: 10,
           fontWeight: FontWeight.w800,

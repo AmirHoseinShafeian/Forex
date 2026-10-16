@@ -17,7 +17,8 @@ abstract final class MockMarketData {
       high: math.max(open, close) + wick,
       low: math.min(open, close) - wick * .9,
       close: close,
-      volume: 4 + (index % 9) * 1.35 + math.sin(index * .8).abs() * 6,
+      volume: (40 + (index % 9) * 13.5 + math.sin(index * .8).abs() * 60)
+          .round(),
     );
   });
 
